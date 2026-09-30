@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dekaokto · Photo Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@300;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bone:#F1EEE8; --charcoal:#1F1E1C; --olive:#5C614D; --gold:#C4A75E;
+  --paper:#F8F6F2; --rule:#C9C8BC; --muted:#6f7063;
+  --serif:'DM Serif Display',Georgia,serif;
+  --sans:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bone)}
+body{margin:0;font-family:var(--sans);font-weight:300;color:var(--charcoal);background:var(--bone);line-height:1.5}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--olive);outline-offset:2px}
+
+header.top{display:flex;align-items:center;gap:16px;padding:22px clamp(20px,4vw,56px);border-bottom:1px solid var(--rule)}
+header.top svg{height:20px;width:auto;display:block;color:var(--charcoal)}
+header.top small{font-weight:500;color:var(--muted);font-size:13px;border-left:1px solid var(--rule);padding-left:16px}
+
+main{padding:0 clamp(20px,4vw,56px) 80px;max-width:1500px;margin:0 auto}
+.intro{padding:56px 0 32px;max-width:720px}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(38px,5vw,60px);line-height:1.05;color:var(--olive);margin:0 0 14px}
+.intro p{margin:0;font-size:17px;max-width:540px}
+
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;padding:44px 20px;background:var(--olive);color:var(--bone);border-radius:24px;cursor:pointer;transition:background .15s}
+.drop:hover,.drop.over{background:#4c503f}
+.drop strong{font-family:var(--serif);font-weight:400;font-size:26px}
+.drop span{font-size:14px;opacity:.85}
+.drop input{display:none}
+.drop.compact{padding:22px 20px;flex-direction:row;gap:14px}
+.drop.compact strong{font-size:20px}
+
+.bar{display:none;flex-wrap:wrap;gap:18px 26px;align-items:end;padding:22px 0;margin-top:28px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.bar.on{display:flex}
+.field{display:flex;flex-direction:column;gap:6px}
+.k{font-size:12px;font-weight:600;color:var(--muted)}
+select,.txt{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:9px 12px;min-height:40px}
+input[type=range]{accent-color:var(--olive);width:130px}
+.spacer{flex:1}
+.btn{border:0;border-radius:999px;padding:11px 22px;font-weight:600;cursor:pointer;background:var(--charcoal);color:var(--bone);white-space:nowrap}
+.btn:hover{background:#000}
+.btn.ghost{background:transparent;color:var(--charcoal);border:1px solid var(--charcoal)}
+.btn.ghost:hover{background:var(--charcoal);color:var(--bone)}
+.btn.small{padding:8px 16px;font-size:13px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:22px;margin-top:28px}
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:20px;overflow:hidden;display:flex;flex-direction:column}
+.card.sel{outline:2px solid var(--olive);outline-offset:-2px}
+.stage{aspect-ratio:4/3;background:#dedbd2;position:relative;overflow:hidden}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+.ctrl{padding:16px 18px 18px;display:flex;flex-direction:column;gap:14px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.name{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.pick input{accent-color:var(--olive);width:16px;height:16px}
+.block{display:flex;flex-direction:column;gap:12px;padding-top:14px;border-top:1px solid var(--rule)}
+.block:first-of-type{border-top:0;padding-top:0}
+.btitle{font-family:var(--serif);font-size:19px;color:var(--olive);line-height:1}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+.swatches,.seg,.poss{display:flex;gap:6px}
+.sw{width:28px;height:28px;border-radius:50%;border:1px solid var(--rule);cursor:pointer;padding:0}
+.sw[aria-pressed=true]{outline:2px solid var(--charcoal);outline-offset:2px}
+.seg button{border:1px solid var(--rule);background:transparent;padding:6px 14px;cursor:pointer;font-size:13px;font-weight:500}
+.seg button:first-child{border-radius:999px 0 0 999px}
+.seg button:last-child{border-radius:0 999px 999px 0}
+.seg button+button{border-left:0}
+.seg button[aria-pressed=true]{background:var(--charcoal);color:var(--bone);border-color:var(--charcoal)}
+.pos{position:relative;width:32px;height:24px;border:1px solid var(--rule);background:transparent;border-radius:4px;cursor:pointer;padding:0}
+.pos::after{content:"";position:absolute;width:10px;height:6px;background:var(--charcoal);border-radius:1px}
+.pos[data-v=tl]::after{left:3px;top:3px}.pos[data-v=tr]::after{right:3px;top:3px}
+.pos[data-v=bl]::after{left:3px;bottom:3px}.pos[data-v=br]::after{right:3px;bottom:3px}
+.pos[data-v=c]::after{left:50%;top:50%;transform:translate(-50%,-50%)}
+.pos[aria-pressed=true]{border-color:var(--charcoal);border-width:2px}
+.actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.actions .r{display:flex;gap:8px;align-items:center}
+.link{background:none;border:0;padding:6px 0;cursor:pointer;color:var(--muted);text-decoration:underline;font-size:13px}
+.link:hover{color:var(--charcoal)}
+.hide{display:none!important}
+
+.modal{position:fixed;inset:0;background:rgba(31,30,28,.62);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal[hidden]{display:none}
+.dlg{background:var(--bone);border-radius:24px;padding:24px;width:100%;max-width:960px;max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:18px}
+.dlg h2{font-family:var(--serif);font-weight:400;font-size:30px;color:var(--olive);margin:0;line-height:1.1}
+.dlg .foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.dlg .foot .r{display:flex;gap:10px}
+.cropwrap{display:flex;justify-content:center;background:#dedbd2;border-radius:12px;padding:12px}
+.cropstage{position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.cropstage canvas{display:block}
+.cbox{position:absolute;border:2px solid var(--bone);box-shadow:0 0 0 9999px rgba(31,30,28,.58);cursor:move}
+.hd{position:absolute;width:20px;height:20px;background:var(--bone);border:2px solid var(--charcoal)}
+.hd[data-m=nw]{left:0;top:0;cursor:nwse-resize}.hd[data-m=ne]{right:0;top:0;cursor:nesw-resize}
+.hd[data-m=sw]{left:0;bottom:0;cursor:nesw-resize}.hd[data-m=se]{right:0;bottom:0;cursor:nwse-resize}
+.info{font-size:13px;color:var(--muted)}
+.cprev{display:flex;justify-content:center;background:#dedbd2;border-radius:12px;padding:12px}
+.cprev canvas{max-width:100%;max-height:340px;display:block}
+
+footer{padding:24px clamp(20px,4vw,56px);border-top:1px solid var(--rule);font-size:13px;color:var(--muted)}
+@media(max-width:520px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <svg viewBox="235 532 1450 216" role="img" aria-label="Dekaokto"><path id="hdrPath" fill="currentColor"/></svg>
+  <small>Photo studio</small>
+</header>
+
+<main>
+  <section class="intro">
+    <h1>Prepare your property photos</h1>
+    <p>Add photos, crop them, combine several into one, and add a label and the Dekaokto logo. Everything happens in your browser. Nothing is uploaded.</p>
+  </section>
+
+  <label class="drop" id="drop">
+    <strong>Add photos</strong>
+    <span>Drop images here or click to browse. You can select many at once.</span>
+    <input type="file" id="file" accept="image/*" multiple>
+  </label>
+
+  <section class="bar" id="bar">
+    <div class="field"><label class="k" for="allLabel">Set label on all</label><select id="allLabel"></select></div>
+    <div class="field"><label class="k" for="allLogo">Set logo on all</label><select id="allLogo"></select></div>
+    <div class="field"><label class="k" for="size">Label size</label><input type="range" id="size" min="0.6" max="1.8" step="0.05" value="1"></div>
+    <div class="field"><label class="k" for="logoSize">Logo size</label><input type="range" id="logoSize" min="0.5" max="2.5" step="0.05" value="1"></div>
+    <div class="field"><label class="k" for="logoOp">Logo opacity</label><input type="range" id="logoOp" min="0.2" max="1" step="0.05" value="1"></div>
+    <div class="field"><label class="k" for="fmt">File type</label><select id="fmt"><option value="jpg">JPG</option><option value="png">PNG</option></select></div>
+    <div class="spacer"></div>
+    <button class="btn ghost" id="combineBtn" disabled>Combine selected</button>
+    <button class="btn ghost" id="clear">Remove all</button>
+    <button class="btn" id="dlAll">Download all</button>
+  </section>
+
+  <section class="grid" id="grid"></section>
+</main>
+
+<footer>Dekaokto · Strategic Property Consulting</footer>
+
+<!-- Crop dialog -->
+<div class="modal" id="cropModal" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-label="Crop photo">
+    <h2>Crop photo</h2>
+    <div class="row"><div class="field"><span class="k">Shape</span><div class="seg" id="ratioSeg"></div></div></div>
+    <div class="cropwrap"><div class="cropstage" id="cropStage"><canvas id="cropCanvas"></canvas>
+      <div class="cbox" id="cbox"><i class="hd" data-m="nw"></i><i class="hd" data-m="ne"></i><i class="hd" data-m="sw"></i><i class="hd" data-m="se"></i></div>
+    </div></div>
+    <div class="foot">
+      <span class="info" id="cropInfo"></span>
+      <div class="r"><button class="link" id="cropReset">Reset crop</button><button class="btn ghost small" id="cropCancel">Cancel</button><button class="btn small" id="cropApply">Apply crop</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Combine dialog -->
+<div class="modal" id="combModal" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-label="Combine photos">
+    <h2>Combine photos</h2>
+    <div class="row">
+      <div class="field"><span class="k">Layout</span><div class="seg" id="cLayout"></div></div>
+      <div class="field hide" id="colsField"><span class="k">Columns</span><div class="seg" id="cCols"></div></div>
+      <div class="field"><span class="k">Gap</span><div class="seg" id="cGap"></div></div>
+      <div class="field"><span class="k">Background</span><div class="swatches" id="cBg"></div></div>
+    </div>
+    <div class="cprev"><canvas id="cPrev"></canvas></div>
+    <div class="foot">
+      <span class="info" id="cInfo"></span>
+      <div class="r"><button class="btn ghost small" id="cCancel">Cancel</button><button class="btn small" id="cCreate">Create combined photo</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+/* ---------- Brand assets (vector, extracted from dekaokto_final_logotypes.pdf) ---------- */
+const WORD_D = "M 355.546875 662.914062 C 355.546875 691.007812 332.902344 713.863281 305.066406 713.863281 L 268.632812 713.863281 L 268.632812 566.160156 L 305.066406 566.160156 C 332.902344 566.160156 355.546875 589.015625 355.546875 617.113281 Z M 308.609375 532.203125 L 235 532.203125 L 235 747.824219 L 308.609375 747.824219 C 353.035156 747.824219 389.179688 711.332031 389.179688 666.480469 L 389.179688 613.542969 C 389.179688 568.691406 353.035156 532.203125 308.609375 532.203125  M 408.570312 747.824219 L 545.535156 747.824219 L 545.535156 713.308594 L 460.164062 713.308594 C 450.265625 713.308594 442.210938 705.121094 442.210938 695.058594 L 442.210938 673.375 C 442.210938 664.398438 449.394531 657.09375 458.230469 657.09375 L 527.824219 657.09375 L 527.824219 622.910156 L 454.964844 622.910156 C 447.929688 622.910156 442.210938 617.097656 442.210938 609.953125 L 442.191406 583.53125 C 442.191406 577.734375 445.132812 572.375 450.058594 569.195312 C 452.570312 567.574219 455.695312 566.714844 459.101562 566.714844 L 545.535156 566.71875 L 545.535156 532.203125 L 408.570312 532.203125 Z M 408.570312 747.824219  M 1652.066406 634.113281 L 1652.011719 639.332031 C 1651.972656 642.214844 1651.945312 644.417969 1651.945312 645.433594 C 1651.972656 656.039062 1651.027344 664.398438 1646.222656 673.292969 C 1636.5625 691.214844 1616.621094 701.914062 1592.882812 701.914062 C 1586.175781 701.914062 1579.601562 701.039062 1573.347656 699.320312 C 1567.058594 697.601562 1561.40625 694.847656 1556.546875 691.140625 C 1548.378906 684.917969 1542.195312 675.886719 1538.667969 665.019531 C 1536.296875 657.691406 1535.28125 651.976562 1535.15625 645.304688 C 1535.035156 637.996094 1534.820312 615.945312 1535.441406 610.695312 C 1536.300781 603.15625 1538.484375 596.300781 1541.933594 590.316406 C 1552.511719 571.949219 1572.699219 566.730469 1587.78125 565.589844 C 1589.632812 565.4375 1591.738281 565.363281 1594.03125 565.363281 C 1612.335938 565.363281 1626.964844 571.078125 1637.507812 582.347656 C 1645.804688 591.246094 1651.179688 603.726562 1651.890625 615.730469 C 1652.25 621.886719 1652.167969 627.28125 1652.066406 634.113281 M 1657.667969 713.308594 L 1658.808594 712.332031 C 1661.367188 710.132812 1663.738281 707.847656 1665.859375 705.539062 C 1679.578125 690.636719 1686.140625 671.859375 1684.835938 651.261719 L 1684.808594 626.34375 C 1686.410156 600.367188 1677.183594 575.304688 1659.492188 557.585938 C 1647.9375 546.007812 1627.238281 532.203125 1594.222656 532.203125 C 1591.488281 532.203125 1588.582031 532.304688 1585.582031 532.5 C 1526.871094 536.507812 1501.359375 578.851562 1502.121094 619.03125 L 1502.121094 650.375 C 1502.105469 651.472656 1502.105469 652.570312 1502.121094 653.839844 C 1502.664062 676.710938 1512.128906 697.488281 1528.777344 712.34375 L 1529.863281 713.308594 L 1502.105469 713.308594 L 1502.105469 747.824219 L 1685 747.824219 L 1685 713.308594 Z M 1657.667969 713.308594  M 825.761719 666.710938 L 844.980469 595.289062 C 845.976562 591.621094 849.039062 589.191406 852.78125 589.101562 C 856.5 588.96875 859.679688 591.257812 860.859375 594.890625 L 884.101562 666.710938 Z M 873.648438 532.203125 L 832.6875 532.203125 L 776.515625 722.375 L 769.007812 747.824219 L 802.503906 747.824219 L 815.507812 700.902344 L 895.164062 700.902344 L 910.332031 747.824219 L 945.378906 747.824219 L 873.742188 532.480469 Z M 873.648438 532.203125  M 1094.347656 658.25 C 1094.347656 668.777344 1093.386719 677.074219 1088.609375 685.90625 C 1078.949219 703.828125 1059.015625 714.527344 1035.285156 714.527344 C 1028.546875 714.527344 1021.976562 713.652344 1015.746094 711.917969 C 1009.492188 710.222656 1003.84375 707.476562 998.949219 703.753906 C 990.789062 697.539062 984.601562 688.503906 981.054688 677.632812 C 978.691406 670.335938 977.679688 664.621094 977.558594 657.921875 L 977.550781 657.566406 C 977.550781 657.4375 977.546875 657.304688 977.546875 657.160156 C 977.429688 649.527344 977.324219 628.585938 977.546875 617.4375 L 977.546875 617.121094 C 977.617188 613.921875 977.714844 611.699219 977.828125 610.695312 C 978.6875 603.167969 980.871094 596.316406 984.316406 590.316406 C 994.898438 571.949219 1015.097656 566.734375 1030.179688 565.589844 C 1032.140625 565.429688 1034.242188 565.347656 1036.421875 565.347656 C 1054.71875 565.347656 1069.351562 571.0625 1079.910156 582.335938 C 1088.226562 591.285156 1093.597656 603.773438 1094.28125 615.746094 C 1094.304688 616.160156 1094.335938 616.613281 1094.347656 617.113281 Z M 1127.300781 616.707031 C 1126.371094 594.09375 1117.398438 573.167969 1102.011719 557.71875 L 1101.894531 557.585938 C 1090.332031 546 1069.621094 532.1875 1036.609375 532.1875 C 1033.957031 532.1875 1031.046875 532.296875 1027.96875 532.515625 C 1001.378906 534.328125 979.46875 544.328125 964.613281 561.4375 C 951.691406 576.320312 944.550781 596.089844 944.507812 617.113281 L 944.507812 668.507812 L 944.601562 668.914062 L 944.621094 668.914062 C 945.761719 691.0625 955.382812 711.132812 971.75 725.457031 C 988.226562 739.878906 1010.789062 747.824219 1035.285156 747.824219 L 1036.722656 747.824219 C 1065.164062 747.496094 1091.238281 736.679688 1108.257812 718.140625 C 1120.792969 704.53125 1127.398438 687.515625 1127.375 668.914062 L 1127.386719 617.113281 L 1127.320312 616.707031 Z M 1127.300781 616.707031  M 599.527344 532.175781 L 564.054688 532.175781 L 564.054688 747.824219 L 599.527344 747.824219 L 599.527344 677.875 L 750.046875 747.460938 L 750.625 747.726562 L 750.625 709.578125 L 621.664062 649.484375 C 617.886719 647.777344 615.539062 644.144531 615.539062 640 C 615.539062 635.855469 617.886719 632.21875 621.667969 630.511719 L 750.390625 570.527344 L 750.625 570.417969 L 750.625 532.269531 L 599.527344 602.121094 Z M 599.527344 532.175781  M 1183.601562 532.175781 L 1148.128906 532.175781 L 1148.128906 747.824219 L 1183.601562 747.824219 L 1183.601562 677.875 L 1334.121094 747.460938 L 1334.695312 747.726562 L 1334.695312 709.578125 L 1205.734375 649.484375 C 1201.957031 647.777344 1199.613281 644.144531 1199.613281 640 C 1199.613281 635.855469 1201.957031 632.21875 1205.742188 630.511719 L 1334.464844 570.527344 L 1334.695312 570.417969 L 1334.695312 532.269531 L 1183.601562 602.121094 Z M 1183.601562 532.175781  M 1356.796875 566.972656 L 1397.125 566.972656 C 1403.609375 566.972656 1408.886719 572.25 1408.886719 578.734375 L 1408.886719 747.824219 L 1443.667969 747.824219 L 1443.667969 578.734375 C 1443.667969 572.25 1448.945312 566.972656 1455.429688 566.972656 L 1495.742188 566.972656 L 1495.742188 532.191406 L 1356.796875 532.191406 Z M 1356.796875 566.972656 ";
+const ICON_D = "M 883.476562 640.003906 L 691.332031 726.496094 L 634.457031 752.125 L 634.457031 527.855469 Z M 1188.394531 502.4375 L 965.929688 602.90625 C 962.191406 604.585938 957.917969 604.585938 954.191406 602.90625 L 731.601562 502.4375 C 725.578125 499.722656 721.835938 493.929688 721.835938 487.320312 C 721.835938 480.707031 725.578125 474.914062 731.601562 472.199219 L 954.132812 371.726562 C 955.996094 370.886719 957.996094 370.464844 960 370.464844 C 962.003906 370.464844 964.003906 370.886719 965.867188 371.726562 L 1188.394531 472.199219 C 1194.410156 474.914062 1198.148438 480.707031 1198.148438 487.320312 C 1198.148438 493.929688 1194.410156 499.722656 1188.394531 502.4375 M 731.605469 777.542969 L 954.191406 677.078125 C 956.054688 676.234375 958.058594 675.816406 960.058594 675.816406 C 962.058594 675.816406 964.0625 676.234375 965.925781 677.078125 L 1188.398438 777.542969 C 1194.421875 780.257812 1198.164062 786.054688 1198.164062 792.664062 C 1198.164062 799.273438 1194.421875 805.070312 1188.398438 807.785156 L 965.90625 908.269531 C 962.171875 909.957031 957.890625 909.953125 954.167969 908.269531 L 731.605469 807.785156 C 725.589844 805.070312 721.851562 799.277344 721.851562 792.664062 C 721.851562 786.050781 725.589844 780.257812 731.605469 777.542969 M 1285.542969 527.855469 L 1285.542969 752.125 L 1036.523438 639.980469 L 1228.667969 553.488281 Z M 1349.464844 735.699219 L 1349.464844 486.761719 C 1349.464844 479.949219 1345.453125 473.742188 1339.242188 470.945312 L 967.554688 303.628906 C 962.753906 301.46875 957.246094 301.46875 952.445312 303.628906 L 511.957031 501.945312 L 510.738281 502.496094 L 510.738281 571.207031 L 570.539062 544.28125 L 570.539062 793.21875 C 570.539062 800.03125 574.550781 806.238281 580.757812 809.035156 L 952.476562 976.367188 C 954.878906 977.449219 957.457031 977.988281 960.035156 977.988281 C 962.613281 977.988281 965.191406 977.449219 967.589844 976.367188 L 1408.042969 778.035156 L 1409.261719 777.484375 L 1409.261719 708.777344 Z M 1349.464844 735.699219 ";
+const LOGOS = {
+  wordmark:{name:'Wordmark', vb:[235,532,1450,216], path:new Path2D(WORD_D), rel:0.17},
+  icon:    {name:'Icon',     vb:[511,302,898,676],  path:new Path2D(ICON_D), rel:0.06}
+};
+document.getElementById('hdrPath').setAttribute('d', WORD_D);
+
+/* ---------- Config ---------- */
+const COLORS = {
+  olive:    {name:'Deep Olive', bg:'#5C614D', fg:'#F1EEE8'},
+  charcoal: {name:'Charcoal',   bg:'#1F1E1C', fg:'#F1EEE8'},
+  bone:     {name:'Bone',       bg:'#F1EEE8', fg:'#1F1E1C'},
+  gold:     {name:'Gold',       bg:'#C4A75E', fg:'#1F1E1C'}
+};
+const LABELS = {
+  '':         {t:'No label',      c:'olive'},
+  'new':      {t:'New listing',   c:'olive'},
+  'exclusive':{t:'Exclusive',     c:'charcoal'},
+  'offer':    {t:'Under offer',   c:'bone'},
+  'sold':     {t:'Sold',          c:'gold'},
+  'reduced':  {t:'Price reduced', c:'olive'},
+  'soon':     {t:'Coming soon',   c:'bone'},
+  'off':      {t:'Off-market',    c:'charcoal'},
+  'custom':   {t:'Custom text…',  c:'olive'}
+};
+const FONT = '"Plus Jakarta Sans", system-ui, sans-serif';
+
+/* ---------- State ---------- */
+const items = [];
+let uid = 0, combCount = 0;
+const $ = id => document.getElementById(id);
+const grid = $('grid'), bar = $('bar'), drop = $('drop');
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const globals = () => ({size:parseFloat($('size').value), logoSize:parseFloat($('logoSize').value), logoOp:parseFloat($('logoOp').value), fmt:$('fmt').value});
+
+/* ---------- Drawing (same code for preview and export) ---------- */
+function srcOf(it){
+  const c = it.crop;
+  return c ? {sx:c.x,sy:c.y,sw:c.w,sh:c.h} : {sx:0,sy:0,sw:it.bmp.width,sh:it.bmp.height};
+}
+function labelText(it){
+  if(!it.label) return '';
+  return (it.label==='custom' ? it.custom : LABELS[it.label].t).trim().toUpperCase();
+}
+function drawLabel(ctx, it, w, h, size){
+  const text = labelText(it);
+  if(!text) return null;
+  const ref = (w+h)/2, fs = ref*0.032*size, sp = fs*0.16;
+  ctx.font = `600 ${fs}px ${FONT}`;
+  ctx.textBaseline = 'alphabetic';
+  let tw = 0;
+  for(const ch of text) tw += ctx.measureText(ch).width + sp;
+  tw -= sp;
+  const col = COLORS[it.color], capH = fs*0.72;
+  let x,y,bw,bh, banner = it.style==='banner';
+  if(banner){
+    bw = w; bh = fs*2.7; x = 0; y = it.pos[0]==='t' ? 0 : h-bh;
+  }else{
+    const px = fs*1.15, py = fs*0.85, m = ref*0.03;
+    bw = tw+px*2; bh = capH+py*2;
+    x = it.pos[1]==='l' ? m : w-m-bw;
+    y = it.pos[0]==='t' ? m : h-m-bh;
+  }
+  ctx.fillStyle = col.bg; ctx.fillRect(x,y,bw,bh);
+  ctx.fillStyle = col.fg;
+  let cx = x + (bw-tw)/2;
+  const cy = y + (bh+capH)/2;
+  for(const ch of text){ ctx.fillText(ch,cx,cy); cx += ctx.measureText(ch).width + sp; }
+  return banner ? {side:it.pos[0], h:bh} : null;
+}
+function drawLogo(ctx, it, w, h, g, avoid){
+  if(!it.logo) return;
+  const L = LOGOS[it.logo], [vx,vy,vw,vh] = L.vb;
+  const ref = (w+h)/2, m = ref*0.03;
+  const lw = ref*L.rel*g.logoSize, s = lw/vw, lh = vh*s;
+  let x,y;
+  if(it.logoPos==='c'){ x=(w-lw)/2; y=(h-lh)/2; }
+  else{
+    x = it.logoPos[1]==='l' ? m : w-m-lw;
+    y = it.logoPos[0]==='t' ? m : h-m-lh;
+    if(avoid && avoid.side===it.logoPos[0]) y += (avoid.side==='t' ? avoid.h : -avoid.h);
+  }
+  ctx.save();
+  ctx.globalAlpha = g.logoOp;
+  ctx.fillStyle = COLORS[it.logoColor].bg;
+  ctx.translate(x,y); ctx.scale(s,s); ctx.translate(-vx,-vy);
+  ctx.fill(L.path);
+  ctx.restore();
+}
+function draw(ctx, it, w, h, g){
+  const {sx,sy,sw,sh} = srcOf(it);
+  ctx.clearRect(0,0,w,h);
+  ctx.drawImage(it.bmp, sx,sy,sw,sh, 0,0,w,h);
+  const avoid = drawLabel(ctx, it, w, h, g.size);
+  drawLogo(ctx, it, w, h, g, avoid);
+}
+function renderPreview(it){
+  const {sw,sh} = srcOf(it);
+  const s = Math.min(1, 900/sw);
+  const w = Math.round(sw*s), h = Math.round(sh*s), c = it.canvas;
+  if(c.width!==w||c.height!==h){ c.width=w; c.height=h; }
+  draw(c.getContext('2d'), it, w, h, globals());
+  if(it.nameEl) it.nameEl.textContent = it.name + (it.crop ? ' · cropped' : '');
+  if(it.cropBtn) it.cropBtn.textContent = it.crop ? 'Crop ✓' : 'Crop';
+}
+function exportBlob(it){
+  const g = globals(), {sw,sh} = srcOf(it);
+  const c = document.createElement('canvas');
+  c.width = Math.round(sw); c.height = Math.round(sh);
+  draw(c.getContext('2d'), it, c.width, c.height, g);
+  return new Promise(res => c.toBlob(res, g.fmt==='png'?'image/png':'image/jpeg', 0.93));
+}
+function outName(it, used){
+  const base = it.name.replace(/\.[^.]+$/,'');
+  const slug = it.label ? '-' + (it.label==='custom' ? (it.custom||'label') : LABELS[it.label].t).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') : '';
+  const n = base+slug, ext = '.'+(globals().fmt==='png'?'png':'jpg');
+  let out = n+ext, i = 2;
+  while(used && used.has(out)) out = `${n}-${i++}${ext}`;
+  used && used.add(out);
+  return out;
+}
+function save(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ---------- UI helpers ---------- */
+function el(tag, attrs={}, kids=[]){
+  const e = document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs)){
+    if(k==='class') e.className=v; else if(k==='text') e.textContent=v; else e.setAttribute(k,v);
+  }
+  kids.forEach(k=>e.appendChild(k));
+  return e;
+}
+const field = (label, child) => el('div',{class:'field'},[el('span',{class:'k',text:label}),child]);
+function optionsSelect(map, extra){
+  const s = el('select');
+  for(const [k,v] of Object.entries(map)) s.appendChild(el('option',{value:k,text:v}));
+  return s;
+}
+const labelSelect = () => optionsSelect(Object.fromEntries(Object.entries(LABELS).map(([k,v])=>[k,v.t])));
+const logoSelect  = () => optionsSelect({'':'No logo', wordmark:'Wordmark', icon:'Icon'});
+function group(container, btns, current, onPick){
+  const paint = v => btns.forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.v===String(v))));
+  btns.forEach(b=>{ b.type='button'; b.addEventListener('click',()=>{paint(b.dataset.v);onPick(b.dataset.v)}); container.appendChild(b); });
+  paint(current);
+  return paint;
+}
+function swatches(current, onPick){
+  const wrap = el('div',{class:'swatches'});
+  const btns = Object.entries(COLORS).map(([k,c])=>{
+    const b = el('button',{class:'sw',title:c.name,'aria-label':c.name,'data-v':k}); b.style.background = c.bg; return b;
+  });
+  const paint = group(wrap, btns, current, onPick);
+  return {wrap, paint};
+}
+function positions(list, current, onPick){
+  const names = {tl:'Top left',tr:'Top right',bl:'Bottom left',br:'Bottom right',c:'Centre'};
+  const wrap = el('div',{class:'poss'});
+  const paint = group(wrap, list.map(v=>el('button',{class:'pos',title:names[v],'aria-label':names[v],'data-v':v})), current, onPick);
+  return {wrap, paint};
+}
+const block = (title, kids) => el('div',{class:'block'},[el('div',{class:'btitle',text:title}),...kids]);
+
+/* ---------- Card ---------- */
+function buildCard(it){
+  const canvas = el('canvas'); it.canvas = canvas;
+
+  // Label
+  const sel = labelSelect(); sel.value = it.label;
+  const custom = el('input',{class:'txt',type:'text',placeholder:'Your text',maxlength:'28'});
+  const customWrap = field('Text', custom);
+  const col = swatches(it.color, v=>{it.color=v;renderPreview(it)});
+  const styleWrap = el('div',{class:'seg'});
+  group(styleWrap, [el('button',{text:'Tag','data-v':'tag'}), el('button',{text:'Banner','data-v':'banner'})], it.style, v=>{it.style=v;renderPreview(it)});
+  const pos = positions(['tl','tr','bl','br'], it.pos, v=>{it.pos=v;renderPreview(it)});
+  const syncCustom = () => customWrap.classList.toggle('hide', it.label!=='custom');
+  sel.addEventListener('change',()=>{
+    it.label = sel.value; it.color = LABELS[it.label].c; col.paint(it.color);
+    syncCustom(); renderPreview(it);
+  });
+  custom.addEventListener('input',()=>{it.custom=custom.value;renderPreview(it)});
+
+  // Logo
+  const lsel = logoSelect(); lsel.value = it.logo;
+  const lcol = swatches(it.logoColor, v=>{it.logoColor=v;renderPreview(it)});
+  const lpos = positions(['tl','tr','bl','br','c'], it.logoPos, v=>{it.logoPos=v;renderPreview(it)});
+  const logoRow = el('div',{class:'row'},[field('Colour',lcol.wrap), field('Position',lpos.wrap)]);
+  const syncLogo = () => logoRow.classList.toggle('hide', !it.logo);
+  lsel.addEventListener('change',()=>{ it.logo = lsel.value; syncLogo(); renderPreview(it); });
+
+  // Header + actions
+  const nameEl = el('div',{class:'name',text:it.name});
+  const chk = el('input',{type:'checkbox'});
+  chk.addEventListener('change',()=>{ it.selected = chk.checked; card.classList.toggle('sel',it.selected); updateCombine(); });
+  const pick = el('label',{class:'pick'},[chk, document.createTextNode('Select')]);
+
+  const cropBtn = el('button',{class:'btn ghost small',text:'Crop'});
+  cropBtn.addEventListener('click',()=>openCrop(it));
+  const dl = el('button',{class:'btn small',text:'Download'});
+  dl.addEventListener('click',async()=>save(await exportBlob(it), outName(it)));
+  const rm = el('button',{class:'link',text:'Remove'});
+  rm.addEventListener('click',()=>{
+    items.splice(items.indexOf(it),1); it.bmp.close && it.bmp.close(); card.remove(); refresh();
+  });
+
+  const card = el('article',{class:'card'},[
+    el('div',{class:'stage'},[canvas]),
+    el('div',{class:'ctrl'},[
+      el('div',{class:'head'},[nameEl,pick]),
+      block('Label',[
+        el('div',{class:'row'},[field('Type',sel), customWrap]),
+        el('div',{class:'row'},[field('Colour',col.wrap), field('Style',styleWrap), field('Position',pos.wrap)])
+      ]),
+      block('Logo',[
+        el('div',{class:'row'},[field('Version',lsel)]),
+        logoRow
+      ]),
+      el('div',{class:'actions'},[rm, el('div',{class:'r'},[cropBtn,dl])])
+    ])
+  ]);
+  Object.assign(it,{card,chk,nameEl,cropBtn,sel,lsel,paintColor:col.paint,syncCustom,syncLogo});
+  syncCustom(); syncLogo();
+  return card;
+}
+
+function refresh(){
+  const has = items.length>0;
+  bar.classList.toggle('on',has);
+  drop.classList.toggle('compact',has);
+  drop.querySelector('strong').textContent = has ? 'Add more photos' : 'Add photos';
+  $('dlAll').textContent = has ? `Download all (${items.length})` : 'Download all';
+  updateCombine();
+}
+function updateCombine(){
+  const n = items.filter(i=>i.selected).length;
+  $('combineBtn').disabled = n<2;
+  $('combineBtn').textContent = n>=2 ? `Combine selected (${n})` : 'Combine selected';
+}
+
+/* ---------- Items + loading ---------- */
+function makeItem(name, bmp){
+  const it = {id:++uid,name,bmp,label:'',custom:'',color:'olive',pos:'tl',style:'tag',logo:'',logoColor:'bone',logoPos:'br',crop:null,selected:false};
+  items.push(it);
+  grid.appendChild(buildCard(it));
+  renderPreview(it);
+  return it;
+}
+async function loadBitmap(file){
+  if(window.createImageBitmap){
+    try{ return await createImageBitmap(file,{imageOrientation:'from-image'}); }catch(e){}
+  }
+  const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(file); });
+  const c = document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight; c.getContext('2d').drawImage(img,0,0);
+  return c;
+}
+async function addFiles(list){
+  const files = [...list];
+  await Promise.race([document.fonts.load(`600 20px "Plus Jakarta Sans"`).catch(()=>{}), new Promise(r=>setTimeout(r,1500))]);
+  for(const f of files.filter(f=>f.type.startsWith('image/'))){
+    try{ makeItem(f.name, await loadBitmap(f)); }catch(e){ console.error('Could not read', f.name, e); }
+  }
+  refresh();
+}
+
+/* ---------- Crop ---------- */
+const cs = {it:null,k:1,W:0,H:0,r:{x:0,y:0,w:0,h:0},ratio:null,drag:null};
+const RATIOS = [['free','Free'],['orig','Original'],['1','1:1'],['1.3333','4:3'],['1.5','3:2'],['1.7778','16:9'],['0.8','4:5']];
+const cropStage = $('cropStage'), cbox = $('cbox');
+group($('ratioSeg'), RATIOS.map(([v,t])=>el('button',{text:t,'data-v':v})), 'free', v=>{
+  cs.ratio = v==='free' ? null : v==='orig' ? cs.it.bmp.width/cs.it.bmp.height : parseFloat(v);
+  if(cs.ratio) fitRatio();
+  paintBox();
+});
+const ratioBtns = [...$('ratioSeg').children];
+const setRatioUI = v => ratioBtns.forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.v===v)));
+
+function fitRatio(){
+  const r = cs.ratio; let w = cs.W, h = cs.H;
+  if(w/h > r) w = h*r; else h = w/r;
+  // keep current centre where possible
+  const cx = clamp(cs.r.x+cs.r.w/2, w/2, cs.W-w/2), cy = clamp(cs.r.y+cs.r.h/2, h/2, cs.H-h/2);
+  cs.r = {x:cx-w/2, y:cy-h/2, w, h};
+}
+function paintBox(){
+  const r = cs.r;
+  Object.assign(cbox.style,{left:r.x-0+'px',top:r.y+'px',width:r.w+'px',height:r.h+'px'});
+  $('cropInfo').textContent = `${Math.round(r.w/cs.k)} × ${Math.round(r.h/cs.k)} px`;
+}
+function openCrop(it){
+  cs.it = it;
+  const bw = it.bmp.width, bh = it.bmp.height;
+  const maxW = Math.min(window.innerWidth-80, 880), maxH = Math.max(240, window.innerHeight*0.55);
+  cs.k = Math.min(maxW/bw, maxH/bh);
+  cs.W = Math.round(bw*cs.k); cs.H = Math.round(bh*cs.k);
+  const c = $('cropCanvas'); c.width = cs.W; c.height = cs.H;
+  c.getContext('2d').drawImage(it.bmp,0,0,cs.W,cs.H);
+  cropStage.style.width = cs.W+'px'; cropStage.style.height = cs.H+'px';
+  cs.ratio = null; setRatioUI('free');
+  cs.r = it.crop ? {x:it.crop.x*cs.k,y:it.crop.y*cs.k,w:it.crop.w*cs.k,h:it.crop.h*cs.k} : {x:0,y:0,w:cs.W,h:cs.H};
+  $('cropModal').hidden = false;
+  paintBox();
+}
+function startDrag(mode,e){ e.preventDefault(); e.stopPropagation(); cs.drag = {mode,px:e.clientX,py:e.clientY,r:{...cs.r}}; }
+cbox.addEventListener('pointerdown',e=>{ if(!e.target.classList.contains('hd')) startDrag('move',e); });
+cbox.querySelectorAll('.hd').forEach(h=>h.addEventListener('pointerdown',e=>startDrag(h.dataset.m,e)));
+window.addEventListener('pointermove',e=>{
+  const d = cs.drag; if(!d) return;
+  const r0 = d.r;
+  if(d.mode==='move'){
+    cs.r.x = clamp(r0.x+e.clientX-d.px, 0, cs.W-r0.w);
+    cs.r.y = clamp(r0.y+e.clientY-d.py, 0, cs.H-r0.h);
+  }else{
+    const ax = d.mode.includes('w') ? r0.x+r0.w : r0.x;
+    const ay = d.mode.includes('n') ? r0.y+r0.h : r0.y;
+    const st = cropStage.getBoundingClientRect();
+    const px = clamp(e.clientX-st.left,0,cs.W), py = clamp(e.clientY-st.top,0,cs.H);
+    const sx = px>=ax ? 1 : -1, sy = py>=ay ? 1 : -1;
+    let w = Math.abs(px-ax), h = Math.abs(py-ay);
+    const maxW = sx>0 ? cs.W-ax : ax, maxH = sy>0 ? cs.H-ay : ay;
+    if(cs.ratio){
+      if(w/Math.max(h,1e-6) > cs.ratio) w = h*cs.ratio; else h = w/cs.ratio;
+      const f = Math.min(1, maxW/Math.max(w,1e-6), maxH/Math.max(h,1e-6)); w*=f; h*=f;
+      w = Math.max(w,24); h = w/cs.ratio;
+    }else{
+      w = Math.max(Math.min(w,maxW),24); h = Math.max(Math.min(h,maxH),24);
+    }
+    cs.r = {x:clamp(sx>0?ax:ax-w,0,cs.W-w), y:clamp(sy>0?ay:ay-h,0,cs.H-h), w, h};
+  }
+  paintBox();
+});
+window.addEventListener('pointerup',()=>{ cs.drag = null; });
+$('cropReset').addEventListener('click',()=>{ cs.ratio=null; setRatioUI('free'); cs.r={x:0,y:0,w:cs.W,h:cs.H}; paintBox(); });
+$('cropCancel').addEventListener('click',()=>{ $('cropModal').hidden = true; });
+$('cropApply').addEventListener('click',()=>{
+  const it = cs.it, r = cs.r, k = cs.k;
+  const full = r.w >= cs.W-1 && r.h >= cs.H-1;
+  it.crop = full ? null : {
+    x:Math.round(r.x/k), y:Math.round(r.y/k),
+    w:Math.min(it.bmp.width-Math.round(r.x/k), Math.round(r.w/k)),
+    h:Math.min(it.bmp.height-Math.round(r.y/k), Math.round(r.h/k))
+  };
+  $('cropModal').hidden = true;
+  renderPreview(it);
+});
+
+/* ---------- Combine ---------- */
+const cb = {layout:'row', cols:2, gap:'thin', bg:'bone', list:[]};
+const GAPS = {none:0, thin:12, wide:32};
+const BGS = {bone:'#F1EEE8', charcoal:'#1F1E1C', white:'#FFFFFF'};
+group($('cLayout'), [['row','Side by side'],['col','Stacked'],['grid','Grid']].map(([v,t])=>el('button',{text:t,'data-v':v})), cb.layout, v=>{
+  cb.layout = v; $('colsField').classList.toggle('hide', v!=='grid'); renderComb();
+});
+group($('cCols'), [['2','2'],['3','3']].map(([v,t])=>el('button',{text:t,'data-v':v})), '2', v=>{ cb.cols = +v; renderComb(); });
+group($('cGap'), [['none','None'],['thin','Thin'],['wide','Wide']].map(([v,t])=>el('button',{text:t,'data-v':v})), cb.gap, v=>{ cb.gap = v; renderComb(); });
+(()=>{
+  const btns = Object.entries(BGS).map(([k,h])=>{ const b = el('button',{class:'sw','aria-label':k,title:k,'data-v':k}); b.style.background = h; return b; });
+  group($('cBg'), btns, cb.bg, v=>{ cb.bg = v; renderComb(); });
+})();
+
+function buildCombined(list, maxSide){
+  const n = list.length, gap0 = GAPS[cb.gap], src = list.map(srcOf);
+  let W,H, place = [];
+  if(cb.layout==='row'){
+    const Hc = Math.min(...src.map(s=>s.sh));
+    const ws = src.map(s=>s.sw*Hc/s.sh);
+    W = ws.reduce((a,b)=>a+b,0) + gap0*(n-1); H = Hc;
+    let x=0; ws.forEach((w,i)=>{ place.push({x,y:0,w,h:Hc,cover:false}); x+=w+gap0; });
+  }else if(cb.layout==='col'){
+    const Wc = Math.min(...src.map(s=>s.sw));
+    const hs = src.map(s=>s.sh*Wc/s.sw);
+    H = hs.reduce((a,b)=>a+b,0) + gap0*(n-1); W = Wc;
+    let y=0; hs.forEach(h=>{ place.push({x:0,y,w:Wc,h,cover:false}); y+=h+gap0; });
+  }else{
+    const cols = Math.min(cb.cols,n), rows = Math.ceil(n/cols), cw = 1200, ch = 800;
+    W = cols*cw + gap0*(cols-1); H = rows*ch + gap0*(rows-1);
+    for(let i=0;i<n;i++) place.push({x:(i%cols)*(cw+gap0), y:Math.floor(i/cols)*(ch+gap0), w:cw, h:ch, cover:true});
+  }
+  const s = Math.min(1, maxSide/Math.max(W,H));
+  const c = document.createElement('canvas'); c.width = Math.round(W*s); c.height = Math.round(H*s);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = BGS[cb.bg]; ctx.fillRect(0,0,c.width,c.height);
+  ctx.imageSmoothingQuality = 'high';
+  place.forEach((p,i)=>{
+    const it = list[i], q = src[i];
+    let sx=q.sx, sy=q.sy, sw=q.sw, sh=q.sh;
+    if(p.cover){
+      const k = Math.max(p.w/sw, p.h/sh), nw = p.w/k, nh = p.h/k;
+      sx += (sw-nw)/2; sy += (sh-nh)/2; sw = nw; sh = nh;
+    }
+    ctx.drawImage(it.bmp, sx,sy,sw,sh, p.x*s,p.y*s,p.w*s,p.h*s);
+  });
+  return c;
+}
+function renderComb(){
+  if(!cb.list.length) return;
+  const c = buildCombined(cb.list, 900), out = $('cPrev');
+  out.width = c.width; out.height = c.height;
+  out.getContext('2d').drawImage(c,0,0);
+  $('cInfo').textContent = `${cb.list.length} photos`;
+}
+$('combineBtn').addEventListener('click',()=>{
+  cb.list = items.filter(i=>i.selected);
+  if(cb.list.length<2) return;
+  $('combModal').hidden = false; renderComb();
+});
+$('cCancel').addEventListener('click',()=>{ $('combModal').hidden = true; });
+$('cCreate').addEventListener('click',()=>{
+  const c = buildCombined(cb.list, 4800);
+  const it = makeItem(`combined-${++combCount}.jpg`, c);
+  cb.list.forEach(i=>{ i.selected = false; i.chk.checked = false; i.card.classList.remove('sel'); });
+  $('combModal').hidden = true; refresh();
+  it.card.scrollIntoView({behavior:'smooth',block:'center'});
+});
+window.addEventListener('keydown',e=>{ if(e.key==='Escape'){ $('cropModal').hidden = true; $('combModal').hidden = true; } });
+
+/* ---------- Bar wiring ---------- */
+$('file').addEventListener('change',e=>{ addFiles(e.target.files); e.target.value=''; });
+['dragenter','dragover'].forEach(t=>window.addEventListener(t,e=>{ e.preventDefault(); drop.classList.add('over'); }));
+window.addEventListener('dragleave',e=>{ if(e.target===document.documentElement) drop.classList.remove('over'); });
+window.addEventListener('drop',e=>{ e.preventDefault(); drop.classList.remove('over'); if(e.dataTransfer&&e.dataTransfer.files.length) addFiles(e.dataTransfer.files); });
+
+const allLabel = $('allLabel'), allLogo = $('allLogo');
+allLabel.appendChild(el('option',{value:'__',text:'Choose…'}));
+for(const [k,v] of Object.entries(LABELS)) if(k!=='custom') allLabel.appendChild(el('option',{value:k,text:v.t}));
+allLabel.addEventListener('change',()=>{
+  const k = allLabel.value; if(k==='__') return;
+  items.forEach(it=>{ it.label = k; it.color = LABELS[k].c; it.sel.value = k; it.paintColor(it.color); it.syncCustom(); renderPreview(it); });
+  allLabel.value = '__';
+});
+allLogo.appendChild(el('option',{value:'__',text:'Choose…'}));
+[['','No logo'],['wordmark','Wordmark'],['icon','Icon']].forEach(([v,t])=>allLogo.appendChild(el('option',{value:v,text:t})));
+allLogo.addEventListener('change',()=>{
+  const k = allLogo.value; if(k==='__') return;
+  items.forEach(it=>{ it.logo = k; it.lsel.value = k; it.syncLogo(); renderPreview(it); });
+  allLogo.value = '__';
+});
+['size','logoSize','logoOp'].forEach(id=>$(id).addEventListener('input',()=>items.forEach(renderPreview)));
+$('clear').addEventListener('click',()=>{ items.splice(0).forEach(i=>i.bmp.close&&i.bmp.close()); grid.innerHTML=''; refresh(); });
+
+$('dlAll').addEventListener('click',async()=>{
+  if(!items.length) return;
+  const btn = $('dlAll'); btn.disabled = true; const old = btn.textContent; btn.textContent = 'Preparing…';
+  const used = new Set();
+  try{
+    if(window.JSZip && items.length>1){
+      const zip = new JSZip();
+      for(const it of items) zip.file(outName(it,used), await exportBlob(it));
+      save(await zip.generateAsync({type:'blob'}), 'dekaokto-photos.zip');
+    }else{
+      for(const it of items){ save(await exportBlob(it), outName(it,used)); await new Promise(r=>setTimeout(r,250)); }
+    }
+  } finally { btn.disabled = false; btn.textContent = old; }
+});
+
+document.fonts.ready.then(()=>items.forEach(renderPreview));
+refresh();
+</script>
+</body>
+</html>
