@@ -66,7 +66,10 @@ input[type=range]{accent-color:var(--olive);width:130px}
 .btitle{font-family:var(--serif);font-size:19px;color:var(--olive);line-height:1}
 .row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
 .swatches,.seg,.poss{display:flex;gap:6px}
+.swatches{flex-wrap:wrap;max-width:260px}
 .sw{width:28px;height:28px;border-radius:50%;border:1px solid var(--rule);cursor:pointer;padding:0}
+.sw.custom{position:relative;background:conic-gradient(#d62f2a,#ffd60a,#5c9e3a,#1f9bd6,#6b3fd1,#d62f2a);overflow:visible}
+.sw.custom input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
 .sw[aria-pressed=true]{outline:2px solid var(--charcoal);outline-offset:2px}
 .seg button{border:1px solid var(--rule);background:transparent;padding:6px 14px;cursor:pointer;font-size:13px;font-weight:500}
 .seg button:first-child{border-radius:999px 0 0 999px}
@@ -192,16 +195,31 @@ const COLORS = {
   olive:    {name:'Deep Olive', bg:'#5C614D', fg:'#F1EEE8'},
   charcoal: {name:'Charcoal',   bg:'#1F1E1C', fg:'#F1EEE8'},
   bone:     {name:'Bone',       bg:'#F1EEE8', fg:'#1F1E1C'},
-  gold:     {name:'Gold',       bg:'#C4A75E', fg:'#1F1E1C'}
+  gold:     {name:'Gold',       bg:'#C4A75E', fg:'#1F1E1C'},
+  terracotta:{name:'Terracotta', bg:'#B5573B', fg:'#F1EEE8'},
+  aegean:   {name:'Aegean Blue',bg:'#1F4E79', fg:'#F1EEE8'},
+  wine:     {name:'Wine',       bg:'#6B1F2E', fg:'#F1EEE8'},
+  red:      {name:'Signal Red', bg:'#D62F2A', fg:'#FFFFFF'},
+  orange:   {name:'Vivid Orange',bg:'#F26B1D',fg:'#1F1E1C'},
+  yellow:   {name:'Bright Yellow',bg:'#FFD60A',fg:'#1F1E1C'},
+  white:    {name:'Pure White', bg:'#FFFFFF', fg:'#1F1E1C'}
 };
+function contrastOf(hex){
+  const n = parseInt(hex.slice(1),16), r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  return (0.299*r+0.587*g+0.114*b) > 150 ? '#1F1E1C' : '#FFFFFF';
+}
+function pickColor(it,key){
+  if(it[key]==='custom'){ const bg = it[key+'Custom']; return {bg, fg:contrastOf(bg)}; }
+  return COLORS[it[key]];
+}
 const LABELS = {
   '':         {t:'No label',      c:'olive'},
   'new':      {t:'New listing',   c:'olive'},
   'exclusive':{t:'Exclusive',     c:'charcoal'},
-  'offer':    {t:'Under offer',   c:'bone'},
+  'offer':    {t:'Under offer',   c:'terracotta'},
   'sold':     {t:'Sold',          c:'gold'},
-  'reduced':  {t:'Price reduced', c:'olive'},
-  'soon':     {t:'Coming soon',   c:'bone'},
+  'reduced':  {t:'Price reduced', c:'red'},
+  'soon':     {t:'Coming soon',   c:'aegean'},
   'off':      {t:'Off-market',    c:'charcoal'},
   'custom':   {t:'Custom text…',  c:'olive'}
 };
@@ -233,7 +251,7 @@ function drawLabel(ctx, it, w, h, size){
   let tw = 0;
   for(const ch of text) tw += ctx.measureText(ch).width + sp;
   tw -= sp;
-  const col = COLORS[it.color], capH = fs*0.72;
+  const col = pickColor(it,'color'), capH = fs*0.72;
   let x,y,bw,bh, banner = it.style==='banner';
   if(banner){
     bw = w; bh = fs*2.7; x = 0; y = it.pos[0]==='t' ? 0 : h-bh;
@@ -264,7 +282,7 @@ function drawLogo(ctx, it, w, h, g, avoid){
   }
   ctx.save();
   ctx.globalAlpha = g.logoOp;
-  ctx.fillStyle = COLORS[it.logoColor].bg;
+  ctx.fillStyle = pickColor(it,'logoColor').bg;
   ctx.translate(x,y); ctx.scale(s,s); ctx.translate(-vx,-vy);
   ctx.fill(L.path);
   ctx.restore();
@@ -331,11 +349,17 @@ function group(container, btns, current, onPick){
   paint(current);
   return paint;
 }
-function swatches(current, onPick){
+function swatches(current, onPick, onCustom, customVal){
   const wrap = el('div',{class:'swatches'});
   const btns = Object.entries(COLORS).map(([k,c])=>{
     const b = el('button',{class:'sw',title:c.name,'aria-label':c.name,'data-v':k}); b.style.background = c.bg; return b;
   });
+  const cb = el('button',{class:'sw custom',title:'Custom colour','aria-label':'Custom colour','data-v':'custom'});
+  const inp = el('input',{type:'color',value:customVal,'aria-label':'Pick any colour'});
+  const tint = hex => { cb.style.background = hex; cb.classList.add('set'); };
+  if(current==='custom') tint(customVal);
+  inp.addEventListener('input',()=>{ tint(inp.value); onCustom(inp.value); paint('custom'); });
+  cb.appendChild(inp); btns.push(cb);
   const paint = group(wrap, btns, current, onPick);
   return {wrap, paint};
 }
@@ -355,7 +379,7 @@ function buildCard(it){
   const sel = labelSelect(); sel.value = it.label;
   const custom = el('input',{class:'txt',type:'text',placeholder:'Your text',maxlength:'28'});
   const customWrap = field('Text', custom);
-  const col = swatches(it.color, v=>{it.color=v;renderPreview(it)});
+  const col = swatches(it.color, v=>{it.color=v;renderPreview(it)}, h=>{it.color='custom';it.colorCustom=h;renderPreview(it)}, it.colorCustom);
   const styleWrap = el('div',{class:'seg'});
   group(styleWrap, [el('button',{text:'Tag','data-v':'tag'}), el('button',{text:'Banner','data-v':'banner'})], it.style, v=>{it.style=v;renderPreview(it)});
   const pos = positions(['tl','tr','bl','br'], it.pos, v=>{it.pos=v;renderPreview(it)});
@@ -368,7 +392,7 @@ function buildCard(it){
 
   // Logo
   const lsel = logoSelect(); lsel.value = it.logo;
-  const lcol = swatches(it.logoColor, v=>{it.logoColor=v;renderPreview(it)});
+  const lcol = swatches(it.logoColor, v=>{it.logoColor=v;renderPreview(it)}, h=>{it.logoColor='custom';it.logoColorCustom=h;renderPreview(it)}, it.logoColorCustom);
   const lpos = positions(['tl','tr','bl','br','c'], it.logoPos, v=>{it.logoPos=v;renderPreview(it)});
   const logoRow = el('div',{class:'row'},[field('Colour',lcol.wrap), field('Position',lpos.wrap)]);
   const syncLogo = () => logoRow.classList.toggle('hide', !it.logo);
@@ -425,7 +449,7 @@ function updateCombine(){
 
 /* ---------- Items + loading ---------- */
 function makeItem(name, bmp){
-  const it = {id:++uid,name,bmp,label:'',custom:'',color:'olive',pos:'tl',style:'tag',logo:'',logoColor:'bone',logoPos:'br',crop:null,selected:false};
+  const it = {id:++uid,name,bmp,label:'',custom:'',color:'olive',colorCustom:'#D62F2A',logoColorCustom:'#D62F2A',pos:'tl',style:'tag',logo:'',logoColor:'bone',logoPos:'br',crop:null,selected:false};
   items.push(it);
   grid.appendChild(buildCard(it));
   renderPreview(it);
